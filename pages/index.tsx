@@ -55,7 +55,10 @@ export default function index() {
   };
   const handleEncoding = () => {
     const encodedText = querystring.stringify({ text: textToEncode });
-    const encodedUrl = encodeUrl(phoneNumber, encodedText);
+    const encodedUrl = encodeUrl(
+      `${countryOption.value}${phoneNumber}`,
+      encodedText,
+    );
     setEncodedUrl(encodedUrl);
   };
 
