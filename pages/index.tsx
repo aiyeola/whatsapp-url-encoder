@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import { useState, useRef, useEffect } from 'react';
 import querystring from 'querystring';
 import {
@@ -96,26 +97,85 @@ export default function index() {
   const onSubmit = (data) =>
     handleEncoding(data.phoneNumber, data.textToEncode);
 
+  const meta = {
+    title: 'WhatsApp URL encoder',
+    description:
+      'encode your text into a WhatsApp URL and share it with your friends & customers',
+    image: 'http://www.aiyeola.dev/static/images/banner-black.png',
+    type: 'website',
+  };
+
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        minH: '100vh',
-      }}
-    >
+    <>
+      <Head>
+        <title>{meta.title}</title>
+        <meta name="robots" content="follow, index" />
+        <meta
+          name="keywords"
+          content="victor, aiyeola, developer, whatsapp, url encoder"
+        />
+        <meta name="author" content="Victor Aiyeola" />
+        <meta name="description" content={meta.description} />
+        <meta
+          property="og:url"
+          content="https://whatsapp-url-encoder.vercel.app/"
+        />
+        <link rel="canonical" href="https://whatsapp-url-encoder.vercel.app/" />
+        <meta property="og:type" content={meta.type} />
+        <meta property="og:description" content={meta.description} />
+        <meta property="og:image" content={meta.image} />
+        <meta property="og:title" content={meta.title} />
+        <meta property="og:site_name" content="WhatsApp URL encoder" />
+        <meta name="twitter:title" content={meta.title} />
+        <meta name="twitter:description" content={meta.description} />
+        <meta name="twitter:image" content={meta.image} />
+      </Head>
       <Box
         sx={{
-          bgColor: '#128c7e',
-          w: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          minH: '100vh',
         }}
       >
         <Box
           sx={{
+            bgColor: '#128c7e',
+            w: '100%',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              maxWidth: '800px',
+              w: '100%',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              paddingX: '10px',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                h: 'auto',
+                alignItems: 'center',
+                py: '10px',
+                w: '100%',
+              }}
+            >
+              <Text color="white" fontSize="2xl" fontWeight="bold">
+                WhatsApp URL encoder
+              </Text>
+            </Box>
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
             maxWidth: '800px',
             w: '100%',
             marginLeft: 'auto',
@@ -123,113 +183,87 @@ export default function index() {
             paddingX: '10px',
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              h: 'auto',
-              alignItems: 'center',
-              py: '10px',
-              w: '100%',
-            }}
-          >
-            <Text color="white" fontSize="2xl" fontWeight="bold">
-              WhatsApp URL encoder
-            </Text>
+          <Box mt="15px">
+            <Text mb="10px">Enter phone number, text to encode and viola</Text>
+
+            <Flex
+              direction="column"
+              as="form"
+              onSubmit={handleSubmit(onSubmit)}
+              w="100%"
+            >
+              <Controller
+                name="phoneNumber"
+                control={control}
+                render={({ field }) => (
+                  <Flex direction="column" my="15px">
+                    <InputGroup mb="5px">
+                      <Input type="tel" {...field} ref={inputRef} />
+                    </InputGroup>
+                    <Text color="red">
+                      {errors.phoneNumber && errors.phoneNumber.message}
+                    </Text>
+                  </Flex>
+                )}
+              />
+
+              <Controller
+                name="textToEncode"
+                control={control}
+                render={({ field }) => (
+                  <Flex direction="column" my="15px">
+                    <Textarea
+                      placeholder="text to encode"
+                      size="lg"
+                      {...field}
+                      mb="5px"
+                    />
+                    <Text color="red">
+                      {errors.textToEncode && errors.textToEncode.message}
+                    </Text>
+                  </Flex>
+                )}
+              />
+
+              <Button
+                variant="solid"
+                colorScheme="whatsapp"
+                isFullWidth
+                type="submit"
+                mb="20px"
+              >
+                Encode
+              </Button>
+            </Flex>
+
+            {encodedUrl && (
+              <CopyToClipboard text={encodedUrl} onCopy={handleCopy}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    bgColor: '#eee',
+                    padding: '7px 19px',
+                    borderRadius: '5px',
+                  }}
+                >
+                  <Text isTruncated>{encodedUrl}</Text>
+                  <Badge
+                    variant="solid"
+                    colorScheme="messenger"
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                    }}
+                  >
+                    {copied ? 'Copied' : 'Copy'}
+                  </Badge>
+                </Box>
+              </CopyToClipboard>
+            )}
           </Box>
         </Box>
       </Box>
-
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          maxWidth: '800px',
-          w: '100%',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          paddingX: '10px',
-        }}
-      >
-        <Box mt="15px">
-          <Text mb="10px">Enter phone number, text to encode and viola</Text>
-
-          <Flex
-            direction="column"
-            as="form"
-            onSubmit={handleSubmit(onSubmit)}
-            w="100%"
-          >
-            <Controller
-              name="phoneNumber"
-              control={control}
-              render={({ field }) => (
-                <Flex direction="column" my="15px">
-                  <InputGroup mb="5px">
-                    <Input type="tel" {...field} ref={inputRef} />
-                  </InputGroup>
-                  <Text color="red">
-                    {errors.phoneNumber && errors.phoneNumber.message}
-                  </Text>
-                </Flex>
-              )}
-            />
-
-            <Controller
-              name="textToEncode"
-              control={control}
-              render={({ field }) => (
-                <Flex direction="column" my="15px">
-                  <Textarea
-                    placeholder="text to encode"
-                    size="lg"
-                    {...field}
-                    mb="5px"
-                  />
-                  <Text color="red">
-                    {errors.textToEncode && errors.textToEncode.message}
-                  </Text>
-                </Flex>
-              )}
-            />
-
-            <Button
-              variant="solid"
-              colorScheme="whatsapp"
-              isFullWidth
-              type="submit"
-              mb="20px"
-            >
-              Encode
-            </Button>
-          </Flex>
-
-          {encodedUrl && (
-            <CopyToClipboard text={encodedUrl} onCopy={handleCopy}>
-              <Box
-                sx={{
-                  position: 'relative',
-                  bgColor: '#eee',
-                  padding: '7px 19px',
-                  borderRadius: '5px',
-                }}
-              >
-                <Text isTruncated>{encodedUrl}</Text>
-                <Badge
-                  variant="solid"
-                  colorScheme="messenger"
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                  }}
-                >
-                  {copied ? 'Copied' : 'Copy'}
-                </Badge>
-              </Box>
-            </CopyToClipboard>
-          )}
-        </Box>
-      </Box>
-    </Box>
+    </>
   );
 }
