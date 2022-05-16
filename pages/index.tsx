@@ -1,50 +1,83 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import querystring from 'querystring';
 import {
   Input,
   InputGroup,
-  InputLeftAddon,
   Textarea,
   Button,
   Box,
   Text,
   Badge,
+  Flex,
 } from '@chakra-ui/react';
-import codes from 'country-calling-code';
-import Select from 'react-select';
-import makeAnimated from 'react-select/animated';
+import intlTelInput from 'intl-tel-input';
+import 'intl-tel-input/build/css/intlTelInput.css';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { useForm, Controller } from 'react-hook-form';
+import { joiResolver } from '@hookform/resolvers/joi';
+import Joi from 'joi';
+import JoiExtPhoneNumber from 'joi-ext-phonenumber';
 
 import encodeUrl from 'src/encodeUrl';
 
-const animatedComponents = makeAnimated();
-
 export default function index() {
-  const [countryOption, setCountryOption] = useState({
-    label: 'Nigeria',
-    value: '234',
-  });
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [textToEncode, setTextToEncode] = useState('');
   const [encodedUrl, setEncodedUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [regionCode, setRegionCode] = useState('NG');
 
-  const options = codes.map((country) => ({
-    label: country.country,
-    value: country.countryCodes[0],
-  }));
+  const inputRef = useRef(null);
 
-  const handleCountryCodeChange = (selectedOption) => {
-    setCountryOption(selectedOption);
-  };
+  useEffect(() => {
+    const phoneNumber = intlTelInput(inputRef.current, {
+      utilsScript:
+        'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.16/js/utils.min.js',
+      preferredCountries: ['NG'],
+    });
 
-  const handlePhoneNumber = (e) => {
-    setPhoneNumber(e.target.value);
-  };
+    function handleCountryChange(_e) {
+      const selectedCountryRegionCode =
+        phoneNumber.getSelectedCountryData().iso2;
 
-  const handleTextToEncode = (e) => {
-    setTextToEncode(e.target.value);
-  };
+      setRegionCode(selectedCountryRegionCode.toUpperCase());
+    }
+
+    inputRef.current.addEventListener('countrychange', handleCountryChange);
+    return () =>
+      inputRef.current.removeEventListener(
+        'countrychange',
+        handleCountryChange,
+      );
+  }, []);
+
+  const schema = Joi.object().keys({
+    phoneNumber: Joi.extend(JoiExtPhoneNumber)
+      .string()
+      .phoneNumber({
+        defaultRegionCode: regionCode,
+        format: 'e164',
+        strict: true,
+      })
+      .messages({
+        'string.empty': 'WhatsApp phone number is required',
+        'phoneNumber.strict':
+          '{{#label}} does not match pattern for the regions phone number',
+      }),
+    textToEncode: Joi.string().required().messages({
+      'string.empty': 'Please enter text to encode',
+    }),
+  });
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: joiResolver(schema),
+    defaultValues: {
+      phoneNumber: '',
+      textToEncode: '',
+    },
+  });
 
   const handleCopy = () => {
     setCopied(true);
@@ -53,14 +86,15 @@ export default function index() {
       setCopied(false);
     }, 3000);
   };
-  const handleEncoding = () => {
+
+  const handleEncoding = (phoneNumber, textToEncode) => {
     const encodedText = querystring.stringify({ text: textToEncode });
-    const encodedUrl = encodeUrl(
-      `${countryOption.value}${phoneNumber}`,
-      encodedText,
-    );
+    const encodedUrl = encodeUrl(`${phoneNumber}`, encodedText);
     setEncodedUrl(encodedUrl);
   };
+
+  const onSubmit = (data) =>
+    handleEncoding(data.phoneNumber, data.textToEncode);
 
   return (
     <Box
@@ -117,46 +151,57 @@ export default function index() {
         }}
       >
         <Box mt="15px">
-          <Text mb="10px"> Select your country</Text>
+          <Text mb="10px">Enter phone number, text to encode and viola</Text>
 
-          <Select
-            aria-label="country code"
-            components={animatedComponents}
-            options={options}
-            isSearchable
-            name="country_code"
-            value={countryOption}
-            onChange={handleCountryCodeChange}
-            placeholder="Select Country"
-          />
-
-          <InputGroup my="15px">
-            <InputLeftAddon children={countryOption.value} />
-            <Input
-              type="tel"
-              placeholder="WhatsApp number"
-              value={phoneNumber}
-              onChange={handlePhoneNumber}
-            />
-          </InputGroup>
-
-          <Textarea
-            placeholder="text to encode"
-            size="lg"
-            value={textToEncode}
-            onChange={handleTextToEncode}
-            mb="15px"
-          />
-
-          <Button
-            variant="solid"
-            colorScheme="whatsapp"
-            onClick={handleEncoding}
-            isFullWidth
-            mb="20px"
+          <Flex
+            direction="column"
+            as="form"
+            onSubmit={handleSubmit(onSubmit)}
+            w="100%"
           >
-            Encode
-          </Button>
+            <Controller
+              name="phoneNumber"
+              control={control}
+              render={({ field }) => (
+                <Flex direction="column" my="15px">
+                  <InputGroup mb="5px">
+                    <Input type="tel" {...field} ref={inputRef} />
+                  </InputGroup>
+                  <Text color="red">
+                    {errors.phoneNumber && errors.phoneNumber.message}
+                  </Text>
+                </Flex>
+              )}
+            />
+
+            <Controller
+              name="textToEncode"
+              control={control}
+              render={({ field }) => (
+                <Flex direction="column" my="15px">
+                  <Textarea
+                    placeholder="text to encode"
+                    size="lg"
+                    {...field}
+                    mb="5px"
+                  />
+                  <Text color="red">
+                    {errors.textToEncode && errors.textToEncode.message}
+                  </Text>
+                </Flex>
+              )}
+            />
+
+            <Button
+              variant="solid"
+              colorScheme="whatsapp"
+              isFullWidth
+              type="submit"
+              mb="20px"
+            >
+              Encode
+            </Button>
+          </Flex>
 
           {encodedUrl && (
             <CopyToClipboard text={encodedUrl} onCopy={handleCopy}>
