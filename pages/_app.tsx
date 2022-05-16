@@ -18,6 +18,7 @@ function App({ Component, pageProps }: AppProps) {
         />
       </Head>
       <ChakraProvider resetCSS theme={theme}>
+        {/*// @ts-ignore*/}
         <Component {...pageProps} />
       </ChakraProvider>
     </>
